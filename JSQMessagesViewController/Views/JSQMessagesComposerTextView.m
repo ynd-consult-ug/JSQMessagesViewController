@@ -91,7 +91,14 @@
 
 - (BOOL)hasText
 {
-    return ([[self.text jsq_stringByTrimingWhitespace] length] > 0);
+    NSString *textWithoutWhitespaces = [self.text jsq_stringByTrimingWhitespace];
+    /* TUN-7192 - send button is active when user double tap dictation button on keyboard.
+     This is workaround to detect if UITextView has text provided by user. If user double click on dictation button, temporarly in text input system adds \U0000fffc character and displays spinner animation. Looks like this code is NSTextAttachement position indicatior. This causes problem because - (BOOL)hasText returns YES even if UITextView input looks empty. Fix for this issue is replace this character with empty string.
+     */
+    NSString *textAttachmentCharachter = @"\U0000fffc";
+    NSString *finalText = [textWithoutWhitespaces stringByReplacingOccurrencesOfString:textAttachmentCharachter withString:@""];
+    
+    return ([finalText length] > 0);
 }
 
 #pragma mark - Setters
