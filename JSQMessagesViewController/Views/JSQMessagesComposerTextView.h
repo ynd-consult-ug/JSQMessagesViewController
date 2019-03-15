@@ -65,4 +65,9 @@
  */
 - (BOOL)hasText;
 
+/**
+ *  Custom Menu Items for UIMenuController when text in UITextView is selected.
+ */
+- (void)setCustomMenuItemsForCurrentSelectedText:(NSArray<UIMenuItem *> *)menuItems actionsTarget:(id)target;
+
 @end

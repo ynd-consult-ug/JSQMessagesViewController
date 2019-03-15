@@ -22,6 +22,10 @@
 
 #import "NSString+JSQMessages.h"
 
+@interface JSQMessagesComposerTextView()
+@property (nonatomic, strong) NSArray<UIMenuItem *> *customMenuItems;
+@property (nonatomic, weak) id customTarget;
+@end
 
 @implementation JSQMessagesComposerTextView
 
@@ -67,8 +71,7 @@
     [self jsq_addTextViewNotificationObservers];
 }
 
-- (instancetype)initWithFrame:(CGRect)frame textContainer:(NSTextContainer *)textContainer
-{
+- (instancetype)initWithFrame:(CGRect)frame textContainer:(NSTextContainer *)textContainer {
     self = [super initWithFrame:frame textContainer:textContainer];
     if (self) {
         [self jsq_configureTextView];
@@ -76,21 +79,18 @@
     return self;
 }
 
-- (void)awakeFromNib
-{
+- (void)awakeFromNib {
     [super awakeFromNib];
     [self jsq_configureTextView];
 }
 
-- (void)dealloc
-{
+- (void)dealloc {
     [self jsq_removeTextViewNotificationObservers];
 }
 
 #pragma mark - Composer text view
 
-- (BOOL)hasText
-{
+- (BOOL)hasText {
     NSString *textWithoutWhitespaces = [self.text jsq_stringByTrimingWhitespace];
     /* TUN-7192 - send button is active when user double tap dictation button on keyboard.
      This is workaround to detect if UITextView has text provided by user. If user double click on dictation button, temporarly in text input system adds \U0000fffc character and displays spinner animation. Looks like this code is NSTextAttachement position indicatior. This causes problem because - (BOOL)hasText returns YES even if UITextView input looks empty. Fix for this issue is replace this character with empty string.
@@ -103,8 +103,7 @@
 
 #pragma mark - Setters
 
-- (void)setPlaceHolder:(NSString *)placeHolder
-{
+- (void)setPlaceHolder:(NSString *)placeHolder {
     if ([placeHolder isEqualToString:_placeHolder]) {
         return;
     }
@@ -113,8 +112,7 @@
     [self setNeedsDisplay];
 }
 
-- (void)setPlaceHolderTextColor:(UIColor *)placeHolderTextColor
-{
+- (void)setPlaceHolderTextColor:(UIColor *)placeHolderTextColor {
     if ([placeHolderTextColor isEqual:_placeHolderTextColor]) {
         return;
     }
@@ -125,32 +123,27 @@
 
 #pragma mark - UITextView overrides
 
-- (void)setText:(NSString *)text
-{
+- (void)setText:(NSString *)text {
     [super setText:text];
     [self setNeedsDisplay];
 }
 
-- (void)setAttributedText:(NSAttributedString *)attributedText
-{
+- (void)setAttributedText:(NSAttributedString *)attributedText {
     [super setAttributedText:attributedText];
     [self setNeedsDisplay];
 }
 
-- (void)setFont:(UIFont *)font
-{
+- (void)setFont:(UIFont *)font {
     [super setFont:font];
     [self setNeedsDisplay];
 }
 
-- (void)setTextAlignment:(NSTextAlignment)textAlignment
-{
+- (void)setTextAlignment:(NSTextAlignment)textAlignment {
     [super setTextAlignment:textAlignment];
     [self setNeedsDisplay];
 }
 
-- (void)paste:(id)sender
-{
+- (void)paste:(id)sender {
     if (!self.pasteDelegate || [self.pasteDelegate composerTextView:self shouldPasteWithSender:sender]) {
         [super paste:sender];
     }
@@ -158,8 +151,7 @@
 
 #pragma mark - Drawing
 
-- (void)drawRect:(CGRect)rect
-{
+- (void)drawRect:(CGRect)rect {
     [super drawRect:rect];
 
     if ([self.text length] == 0 && self.placeHolder) {
@@ -172,8 +164,7 @@
 
 #pragma mark - Notifications
 
-- (void)jsq_addTextViewNotificationObservers
-{
+- (void)jsq_addTextViewNotificationObservers {
     [[NSNotificationCenter defaultCenter] addObserver:self
                                              selector:@selector(jsq_didReceiveTextViewNotification:)
                                                  name:UITextViewTextDidChangeNotification
@@ -190,8 +181,7 @@
                                                object:self];
 }
 
-- (void)jsq_removeTextViewNotificationObservers
-{
+- (void)jsq_removeTextViewNotificationObservers {
     [[NSNotificationCenter defaultCenter] removeObserver:self
                                                     name:UITextViewTextDidChangeNotification
                                                   object:self];
@@ -205,15 +195,13 @@
                                                   object:self];
 }
 
-- (void)jsq_didReceiveTextViewNotification:(NSNotification *)notification
-{
+- (void)jsq_didReceiveTextViewNotification:(NSNotification *)notification {
     [self setNeedsDisplay];
 }
 
 #pragma mark - Utilities
 
-- (NSDictionary *)jsq_placeholderTextAttributes
-{
+- (NSDictionary *)jsq_placeholderTextAttributes {
     NSMutableParagraphStyle *paragraphStyle = [[NSMutableParagraphStyle alloc] init];
     paragraphStyle.lineBreakMode = NSLineBreakByTruncatingTail;
     paragraphStyle.alignment = self.textAlignment;
@@ -225,18 +213,52 @@
 
 #pragma mark - UIMenuController
 
-- (BOOL)canBecomeFirstResponder
-{
-    return [super canBecomeFirstResponder];
+- (BOOL)isCustomMenuItemSelector:(SEL)aSelector {
+    for (UIMenuItem *item in self.customMenuItems) {
+        if (item.action == aSelector) {
+            return YES;
+        }
+    }
+    return NO;
 }
 
-- (BOOL)becomeFirstResponder
-{
-    return [super becomeFirstResponder];
+- (NSMethodSignature *)methodSignatureForSelector:(SEL)aSelector {
+    
+    if ([super methodSignatureForSelector:aSelector]) {
+        return [super methodSignatureForSelector:aSelector];
+    }
+    return [self.customTarget methodSignatureForSelector:aSelector];
+}
+
+- (void)forwardInvocation:(NSInvocation *)anInvocation {
+    
+    if ([self isCustomMenuItemSelector:anInvocation.selector]) {
+        [anInvocation invokeWithTarget:self.customTarget];
+    } else {
+        [super forwardInvocation: anInvocation];
+    }
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
-    [UIMenuController sharedMenuController].menuItems = nil;
+    if (!self.selectedTextRange.empty) {
+        if (UIMenuController.sharedMenuController.menuItems == nil) {
+            [UIMenuController.sharedMenuController setMenuItems:self.customMenuItems];
+        }
+        if ([self isCustomMenuItemSelector:action]) {
+            return YES;
+        }
+    } else {
+        [UIMenuController.sharedMenuController setMenuItems:nil];
+    }
+    
     return [super canPerformAction:action withSender:sender];
 }
+
+- (void)setCustomMenuItemsForCurrentSelectedText:(NSArray<UIMenuItem *> *)menuItems actionsTarget:(id)target {
+    self.customMenuItems = menuItems;
+    self.customTarget = target;
+    [UIMenuController.sharedMenuController update];
+}
+
+
 @end
