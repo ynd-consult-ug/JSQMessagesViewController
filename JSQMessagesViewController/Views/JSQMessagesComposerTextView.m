@@ -24,6 +24,7 @@
 
 @interface JSQMessagesComposerTextView()
 @property (nonatomic, strong) NSArray<UIMenuItem *> *customMenuItems;
+@property (nonatomic, strong) NSArray<UIMenuItem *> *customTextStyleOptions;
 @property (nonatomic, weak) id customTarget;
 @end
 
@@ -219,6 +220,11 @@
             return YES;
         }
     }
+    for (UIMenuItem *item in self.customTextStyleOptions) {
+        if (item.action == aSelector) {
+            return YES;
+        }
+    }
     return NO;
 }
 
@@ -240,10 +246,24 @@
 }
 
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
+    
     if (!self.selectedTextRange.empty) {
+        
+        if ([self isTextStyleOptionsMenuItemSelected]) {
+            [UIMenuController.sharedMenuController setMenuItems:self.customTextStyleOptions];
+        }
+        
+        BOOL isActionTextStyleOptions = action == @selector(_showTextStyleOptions:);
+        BOOL areCustomTextStyleOptionsDefined = self.customTextStyleOptions != nil;
+        BOOL shouldDisplayTextStyleOptionsItem = isActionTextStyleOptions && areCustomTextStyleOptionsDefined && ![self hasTextStyleOptionsMenuItemCustomItems];
+        if (shouldDisplayTextStyleOptionsItem) {
+            return YES;
+        }
+        
         if (UIMenuController.sharedMenuController.menuItems == nil) {
             [UIMenuController.sharedMenuController setMenuItems:self.customMenuItems];
         }
+        
         if ([self isCustomMenuItemSelector:action]) {
             return YES;
         }
@@ -254,10 +274,34 @@
     return [super canPerformAction:action withSender:sender];
 }
 
+-(BOOL)isTextStyleOptionsMenuItemSelected {
+    NSArray<NSString*> *textStyleOptionsSelectors = @[@"toggleBoldface:", @"toggleItalics:", @"toggleUnderline:"];
+    for (UIMenuItem *menuItem in UIMenuController.sharedMenuController.menuItems) {
+        if ([textStyleOptionsSelectors containsObject:NSStringFromSelector(menuItem.action)]) {
+            return YES;
+        }
+    };
+    return NO;
+}
+
+-(BOOL)hasTextStyleOptionsMenuItemCustomItems {
+    for (UIMenuItem *menuItem in UIMenuController.sharedMenuController.menuItems) {
+        if ([self.customTextStyleOptions containsObject:menuItem]) {
+            return YES;
+        }
+    };
+    return NO;
+}
+
 - (void)setCustomMenuItemsForCurrentSelectedText:(NSArray<UIMenuItem *> *)menuItems actionsTarget:(id)target {
     self.customMenuItems = menuItems;
     self.customTarget = target;
     [UIMenuController.sharedMenuController update];
+}
+
+- (void)setCustomMenuItemsForTextStyleOptions:(NSArray<UIMenuItem *> *)customTextStyleOptions actionsTarget:(id)target {
+    self.customTextStyleOptions = customTextStyleOptions;
+    self.customTarget = target;
 }
 
 
