@@ -280,7 +280,7 @@
         if ([textStyleOptionsSelectors containsObject:NSStringFromSelector(menuItem.action)]) {
             return YES;
         }
-    };
+    }
     return NO;
 }
 
