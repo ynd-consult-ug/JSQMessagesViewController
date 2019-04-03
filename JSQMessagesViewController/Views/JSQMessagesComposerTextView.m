@@ -254,8 +254,8 @@
         }
         
         BOOL isActionTextStyleOptions = action == @selector(_showTextStyleOptions:);
-        BOOL areCustomTextStyleOptionsDefined = self.customTextStyleOptions != nil;
-        BOOL shouldDisplayTextStyleOptionsItem = isActionTextStyleOptions && areCustomTextStyleOptionsDefined && ![self hasTextStyleOptionsMenuItemCustomItems];
+        BOOL areCustomTextStyleOptionsDefined = self.customTextStyleOptions.count > 0;
+        BOOL shouldDisplayTextStyleOptionsItem = isActionTextStyleOptions && areCustomTextStyleOptionsDefined && ![self textStyleOptionsMenuItemContainsCustomItems];
         if (shouldDisplayTextStyleOptionsItem) {
             return YES;
         }
@@ -284,12 +284,12 @@
     return NO;
 }
 
--(BOOL)hasTextStyleOptionsMenuItemCustomItems {
+-(BOOL)textStyleOptionsMenuItemContainsCustomItems {
     for (UIMenuItem *menuItem in UIMenuController.sharedMenuController.menuItems) {
         if ([self.customTextStyleOptions containsObject:menuItem]) {
             return YES;
         }
-    };
+    }
     return NO;
 }
 
