@@ -253,9 +253,9 @@
             [UIMenuController.sharedMenuController setMenuItems:self.customTextStyleOptions];
         }
         
-        BOOL isActionTextStyleOptions = action == @selector(_showTextStyleOptions:);
+        BOOL isActionShowTextStyleOptions = action == @selector(_showTextStyleOptions:);
         BOOL areCustomTextStyleOptionsDefined = self.customTextStyleOptions.count > 0;
-        BOOL shouldDisplayTextStyleOptionsItem = isActionTextStyleOptions && areCustomTextStyleOptionsDefined && ![self textStyleOptionsMenuItemContainsCustomItems];
+        BOOL shouldDisplayTextStyleOptionsItem = isActionShowTextStyleOptions && areCustomTextStyleOptionsDefined && ![self textStyleOptionsMenuItemContainsCustomItems];
         if (shouldDisplayTextStyleOptionsItem) {
             return YES;
         }
