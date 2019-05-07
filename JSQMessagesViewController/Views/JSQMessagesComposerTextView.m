@@ -245,25 +245,30 @@
     }
 }
 
+- (BOOL)isShowTextStyleOptionsSelector:(SEL)aSelector {
+    NSString *selectorName = NSStringFromSelector(aSelector);
+    return [selectorName containsString:@"showTextStyleOptions"];
+}
+
 - (BOOL)canPerformAction:(SEL)action withSender:(id)sender {
     
     if (!self.selectedTextRange.empty) {
-        
+
         if ([self isTextStyleOptionsMenuItemSelected]) {
             [UIMenuController.sharedMenuController setMenuItems:self.customTextStyleOptions];
         }
-        
-        BOOL isActionShowTextStyleOptions = action == @selector(_showTextStyleOptions:);
+
+        BOOL isShowTextStyleOptionsSelector = [self isShowTextStyleOptionsSelector:action];
         BOOL areCustomTextStyleOptionsDefined = self.customTextStyleOptions.count > 0;
-        BOOL shouldDisplayTextStyleOptionsItem = isActionShowTextStyleOptions && areCustomTextStyleOptionsDefined && ![self textStyleOptionsMenuItemContainsCustomItems];
+        BOOL shouldDisplayTextStyleOptionsItem = isShowTextStyleOptionsSelector && areCustomTextStyleOptionsDefined && ![self textStyleOptionsMenuItemContainsCustomItems];
         if (shouldDisplayTextStyleOptionsItem) {
             return YES;
         }
-        
+
         if (UIMenuController.sharedMenuController.menuItems == nil) {
             [UIMenuController.sharedMenuController setMenuItems:self.customMenuItems];
         }
-        
+
         if ([self isCustomMenuItemSelector:action]) {
             return YES;
         }
